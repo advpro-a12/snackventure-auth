@@ -3,14 +3,14 @@ package id.ac.ui.cs.advprog.snackventure.auth.controller;
 import id.ac.ui.cs.advprog.snackventure.auth.dto.AuthResponseDto;
 import id.ac.ui.cs.advprog.snackventure.auth.dto.LoginDto;
 import id.ac.ui.cs.advprog.snackventure.auth.dto.RegisterDto;
+import id.ac.ui.cs.advprog.snackventure.auth.enums.UserRole;
 import id.ac.ui.cs.advprog.snackventure.auth.models.UserEntity;
-import id.ac.ui.cs.advprog.snackventure.auth.models.Role;
-import id.ac.ui.cs.advprog.snackventure.auth.repository.RoleRepository;
 import id.ac.ui.cs.advprog.snackventure.auth.repository.UserRepository;
 import id.ac.ui.cs.advprog.snackventure.auth.security.JWTGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -26,16 +26,14 @@ public class AuthController {
 
     private AuthenticationManager authenticationManager;
     private UserRepository userRepository;
-    private RoleRepository roleRepository;
     private PasswordEncoder passwordEncoder;
     private JWTGenerator jwtGenerator;
 
     @Autowired
     public AuthController(AuthenticationManager authenticationManager, UserRepository userRepository,
-                          RoleRepository roleRepository, PasswordEncoder passwordEncoder, JWTGenerator jwtGenerator) {
+                          PasswordEncoder passwordEncoder, JWTGenerator jwtGenerator) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtGenerator = jwtGenerator;
     }
@@ -60,10 +58,11 @@ public class AuthController {
         UserEntity user = new UserEntity();
         user.setUsername(registerDto.getUsername());
         user.setPassword(passwordEncoder.encode((registerDto.getPassword())));
-
-        Role roles = roleRepository.findByName("USER").get();
-        user.setRoles(Collections.singletonList(roles));
-
+        user.setEmail(registerDto.getEmail());
+        user.setPhoneNumber(registerDto.getPhoneNumber());
+        user.setAddress(registerDto.getAddress());
+        user.setUserRole(UserRole.CUSTOMER);
+        
         userRepository.save(user);
 
         return new ResponseEntity<>("User registered success!", HttpStatus.OK);

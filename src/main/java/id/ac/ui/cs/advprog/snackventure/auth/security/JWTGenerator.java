@@ -51,5 +51,4 @@ public class JWTGenerator {
             throw new AuthenticationCredentialsNotFoundException("JWT was exprired or incorrect",ex.fillInStackTrace());
         }
     }
-
 }
