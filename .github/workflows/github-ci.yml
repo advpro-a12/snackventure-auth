@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - development
 
 jobs:
   build:
@@ -41,6 +42,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
+      - name: Set-up Database
+        uses: harmon758/postgresql-action@v1
+        with:
+          postgresql version: '12'
+          postgresql db: test
+          postgresql user: postgres
+          postgresql password: my-password
       - name: Checkout Repository
         uses: actions/checkout@v4
       - name: Set up JDK 21
@@ -59,14 +67,18 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
       - name: Test with Gradle
+        env:
+          SPRING_PROFILES_ACTIVE: test
         run: |
           ./gradlew check --info --stacktrace
-          ./gradlew test
+          ./gradlew test --scan
           ./gradlew jacocoTestReport
+
   publish:
     name: Publish Docker Image
     runs-on: ubuntu-latest
     needs: test
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -84,12 +96,14 @@ jobs:
         run: export DOCKER_BUILDKIT=1
       - name: Build Docker Image
         run: |
-          docker build --build-arg PRODUCTION=$PRODUCTION --build-arg JDBC_DATABASE_PASSWORD=$JDBC_DATABASE_PASSWORD --build-arg JDBC_DATABASE_URL=$JDBC_DATABASE_URL --build-arg JDBC_DATABASE_USERNAME=$JDBC_DATABASE_USERNAME -t ${{ secrets.REGISTRY_USER }}/${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_TAG }} .
+          docker build --build-arg PRODUCTION=${{ secrets.PRODUCTION }} --build-arg JDBC_DATABASE_PASSWORD=${{ secrets.JDBC_DATABASE_PASSWORD }} --build-arg JDBC_DATABASE_URL=${{ secrets.JDBC_DATABASE_URL }} --build-arg JDBC_DATABASE_USERNAME=${{ secrets.JDBC_DATABASE_USERNAME }} -t ${{ secrets.REGISTRY_USER }}/${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_TAG }} .
           docker push ${{ secrets.REGISTRY_USER }}/${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_TAG }}
+
   deploy:
     name: Deploy to GCP
     runs-on: ubuntu-latest
     needs: publish
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
