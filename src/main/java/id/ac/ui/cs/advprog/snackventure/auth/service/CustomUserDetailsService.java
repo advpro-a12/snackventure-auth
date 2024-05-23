@@ -14,11 +14,12 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.UUID;
 
 @Service
 public class CustomUserDetailsService  implements UserDetailsService {
 
-    private UserRepository userRepository;
+    private static UserRepository userRepository;
 
     @Autowired
     public CustomUserDetailsService(UserRepository userRepository) {
@@ -33,5 +34,10 @@ public class CustomUserDetailsService  implements UserDetailsService {
 
     private Collection<GrantedAuthority> mapRolesToAuthorities(UserRole userRole) {
         return Collections.singletonList(new SimpleGrantedAuthority(userRole.name()));
+    }
+
+    public static UUID getId(String username) {
+        UserEntity user = userRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("Username not found"));
+        return user.getId();
     }
 }

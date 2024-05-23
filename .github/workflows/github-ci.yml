@@ -29,6 +29,8 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
       - name: Build with Gradle
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: |
           ./gradlew assemble
       - name: Upload Artifact
